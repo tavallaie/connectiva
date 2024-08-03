@@ -1,3 +1,5 @@
+# connectiva/protocol_detector.py
+
 import os
 import re
 
@@ -7,6 +9,18 @@ class ProtocolDetector:
     based on input parameters or environment configuration.
     """
 
+    # Mapping from URL scheme to protocol name
+    _protocol_map = {
+        "http://": "REST",
+        "https://": "REST",
+        "grpc://": "GRPC",
+        "amqp://": "AMQP",
+        "kafka://": "Kafka",
+        "ws://": "WebSocket",
+        "wss://": "WebSocket",
+        "graphql://": "GraphQL",
+    }
+
     @staticmethod
     def detect_protocol(endpoint: str) -> str:
         """
@@ -15,26 +29,19 @@ class ProtocolDetector:
         :param endpoint: The communication endpoint URL or identifier.
         :return: The detected protocol type as a string.
         """
-        # Check for specific URL patterns
-        if endpoint.startswith("http://") or endpoint.startswith("https://"):
-            return "REST"
-        elif endpoint.startswith("grpc://"):
-            return "GRPC"
-        elif re.match(r"amqp://|mqtt://", endpoint):
-            return "Broker"
-        elif endpoint.startswith("kafka://"):
-            return "Kafka"
-        elif os.path.exists(endpoint):
+        # Use the mapping to detect protocols by URL scheme
+        for scheme, protocol in ProtocolDetector._protocol_map.items():
+            if endpoint.startswith(scheme):
+                return protocol
+
+        # Check if it's a file path
+        if os.path.exists(endpoint):
             return "File"
-        elif endpoint.startswith("ws://") or endpoint.startswith("wss://"):
-            return "WebSocket"
-        elif endpoint.startswith("graphql://"):
-            return "GraphQL"
-        
+
         # Check environment variables for preferred protocol
         preferred_protocol = os.getenv("PREFERRED_PROTOCOL")
         if preferred_protocol:
             return preferred_protocol
-        
+
         # Default fallback
         return "REST"

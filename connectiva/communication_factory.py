@@ -1,9 +1,9 @@
-from .protocol_detector import ProtocolDetector
-from .interfaces import CommunicationMethod
-from .protocols import (
+from connectiva.protocol_detector import ProtocolDetector
+from connectiva.interfaces import CommunicationMethod
+from connectiva.protocols import (
     RestProtocol,
     GrpcProtocol,
-    BrokerProtocol,
+    AMQPProtocol,  
     KafkaProtocol,
     FileProtocol,
     WebSocketProtocol,
@@ -18,7 +18,7 @@ class CommunicationFactory:
     _protocol_map = {
         "REST": RestProtocol,
         "GRPC": GrpcProtocol,
-        "Broker": BrokerProtocol,
+        "AMQP": AMQPProtocol,  
         "Kafka": KafkaProtocol,
         "File": FileProtocol,
         "WebSocket": WebSocketProtocol,
