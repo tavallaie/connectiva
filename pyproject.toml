@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "connectiva"
+version = "0.1.0"
+description = "A Unified Microservice Communication Library"
+authors = ["Ali Tavallaie <a.tavallaie@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+keywords = ["microservices", "communication", "REST", "gRPC", "Kafka", "WebSockets", "GraphQL"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
