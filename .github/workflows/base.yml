@@ -17,56 +17,21 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install Docker on Windows
-        if: runner.os == 'Windows'
-        run: |
-          echo "Installing Docker Desktop on Windows..."
-          choco install docker-desktop --pre -y
-          echo "Docker installed. Restarting Docker Desktop..."
-          Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe" -NoNewWindow -Wait
-          echo "Waiting for Docker to be ready..."
-          Start-Sleep -Seconds 30
-        shell: powershell
+      - name: Set up Docker
+        uses: crazy-max/ghaction-setup-docker@v2
+        with:
+          version: latest  # Specify Docker version if needed
+        id: docker
 
-      - name: Set up Docker Compose on Windows
-        if: runner.os == 'Windows'
-        run: |
-          echo "Setting up Docker Compose on Windows..."
-          curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-windows-x86_64.exe" -o /usr/local/bin/docker-compose.exe
-          chmod +x /usr/local/bin/docker-compose.exe
-          refreshenv
-        shell: powershell
+      - name: Check Docker version
+        run: docker --version
 
-      - name: Install Docker on macOS
-        if: runner.os == 'macOS'
-        run: |
-          echo "Installing Docker on macOS..."
-          brew install --cask docker
-          open /Applications/Docker.app
-          echo "Waiting for Docker to be ready..."
-          while ! docker system info > /dev/null 2>&1; do
-            echo "Waiting for Docker to start..."
-            sleep 1
-          done
-        shell: bash
+      - name: Check Docker Compose version
+        run: docker compose version
 
-      - name: Set up Docker Compose on macOS
-        if: runner.os == 'macOS'
-        run: |
-          echo "Setting up Docker Compose on macOS..."
-          brew install docker-compose
-        shell: bash
-
-      - name: Check Docker and Docker Compose
-        run: |
-          echo "Checking Docker and Docker Compose versions..."
-          docker --version
-          docker compose version
-        shell: bash
-
-      - name: Install Python dependencies
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.python-version }}
@@ -76,5 +41,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
 
-      - name: Install project dependencies
+      - name: Install dependencies
         run: poetry install
