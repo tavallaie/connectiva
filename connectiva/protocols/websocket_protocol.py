@@ -1,4 +1,4 @@
-import websocket
+import websockets
 import json
 from typing import Dict, Any
 from ..interfaces import CommunicationMethod
@@ -16,7 +16,7 @@ class WebSocketProtocol(CommunicationMethod):
     def connect(self):
         print(f"Connecting to WebSocket at {self.websocket_url}...")
         try:
-            self.ws = websocket.create_connection(self.websocket_url)
+            self.ws = websockets.create_connection(self.websocket_url)
             print("Connected to WebSocket!")
         except Exception as e:
             print(f"Failed to connect to WebSocket: {e}")
