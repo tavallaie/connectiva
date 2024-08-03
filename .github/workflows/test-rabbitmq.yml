@@ -1,20 +1,20 @@
 name: RabbitMQ Tests
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/rabbitmq/**'
-      - 'tests/test_rabbitmq.py'
-      - 'pyproject.toml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'src/rabbitmq/**'
-      - 'tests/test_rabbitmq.py'
-      - 'pyproject.toml'
+    push:
+      branches:
+        - main
+      paths:
+        - 'connectiva/protocols/amqp_protocol.py'
+        - 'tests/test_amqp_protocol.py'
+        - 'pyproject.toml'
+    pull_request:
+      branches:
+        - main
+      paths:
+        - 'connectiva/protocols/amqp_protocol.py'
+        - 'tests/test_amqp_protocol.py'
+        - 'pyproject.toml'
 
 jobs:
   test-rabbitmq:
