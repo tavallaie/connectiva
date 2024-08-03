@@ -7,7 +7,7 @@ class TestAMQPProtocol(unittest.TestCase):
 
     def setUp(self):
         # Set up the protocol with real data
-        self.protocol = AMQPProtocol(endpoint='amqp://user:password@localhost:5672/', queue_name='test_queue')
+        self.protocol = AMQPProtocol(endpoint='amqp://guest:guest@127.0.0.1:5672/', queue_name='test_queue')
         self.protocol.connect()
 
     def tearDown(self):
