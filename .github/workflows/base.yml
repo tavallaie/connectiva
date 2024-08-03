@@ -31,3 +31,8 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+      - name: List Docker Directory
+        run: |
+          echo "Listing contents of the docker directory:"
+          ls -la docker/
+        shell: bash
