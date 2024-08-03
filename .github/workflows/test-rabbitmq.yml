@@ -1,0 +1,37 @@
+name: RabbitMQ Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/rabbitmq/**'
+      - 'tests/test_rabbitmq.py'
+      - 'pyproject.toml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/rabbitmq/**'
+      - 'tests/test_rabbitmq.py'
+      - 'pyproject.toml'
+
+jobs:
+  test-rabbitmq:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8, 3.9, 3.10, 3.11,3.12]
+
+    uses: ./.github/workflows/base.yml
+    with:
+      service: 'rabbitmq'
+      python-version: ${{ matrix.python-version }}
+
+    steps:
+      - name: Run RabbitMQ Tests
+        run: |
+          echo "Running RabbitMQ tests on Python ${{ matrix.python-version }}..."
+          docker-compose -f docker/docker-compose.rabbitmq.yml up -d
+          poetry run python -m unittest discover -s tests -p 'test_rabbitmq.py'
+          docker-compose -f docker/docker-compose.rabbitmq.yml down
