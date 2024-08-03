@@ -11,6 +11,7 @@ keywords = ["microservices", "communication", "REST", "gRPC", "Kafka", "WebSocke
 python = "^3.10"
 requests = "^2.32.3"
 grpcio = "^1.65.4"
+pika = "^1.3.2"
 
 
 [build-system]
