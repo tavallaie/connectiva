@@ -40,13 +40,14 @@ jobs:
       - name: Add Poetry to Path
         run: echo "export PATH=\"$HOME/.local/bin:\$PATH\"" >> $GITHUB_ENV
 
-      - name: Install dependencies
-        run: poetry install
-
       - name: Start RabbitMQ Service
         run: |
           echo "Starting RabbitMQ service on Python ${{ matrix.python-version }}..."
           docker compose -f docker/docker-compose.rabbitmq.yml up -d
+
+      - name: Install dependencies
+        run: poetry install
+
 
       - name: Run RabbitMQ Tests
         run: |
