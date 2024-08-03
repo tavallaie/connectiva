@@ -19,12 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check Docker version
-        run: docker --version
-
-      - name: Check Docker Compose version
-        run: docker compose version
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -37,3 +31,4 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+      
