@@ -3,10 +3,6 @@ name: Base Setup
 on:
   workflow_call:
     inputs:
-      service:
-        description: 'The service to test'
-        required: true
-        type: string
       python-version:
         description: 'The Python version to use'
         required: true
