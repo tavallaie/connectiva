@@ -23,7 +23,7 @@ jobs:
       python-version: ${{ matrix.python-version }}
 
   test-rabbitmq:
-    needs: base-setup  # This ensures that base-setup runs before this job
+    needs: base-setup
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -31,11 +31,23 @@ jobs:
         python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start RabbitMQ Service
+        run: |
+          echo "Starting RabbitMQ service on Python ${{ matrix.python-version }}..."
+          docker compose -f docker/docker-compose.rabbitmq.yml up -d
+        shell: bash
+
       - name: Run RabbitMQ Tests
         run: |
           echo "Running RabbitMQ tests on Python ${{ matrix.python-version }}..."
-          docker compose -f docker/docker-compose.rabbitmq.yml up -d
           poetry run python -m unittest discover -s tests -p 'test_amqp_protocol.py'
-          docker compose -f docker/docker-compose.rabbitmq.yml down
         shell: bash
 
+      - name: Stop RabbitMQ Service
+        run: |
+          echo "Stopping RabbitMQ service..."
+          docker compose -f docker/docker-compose.rabbitmq.yml down
+        shell: bash

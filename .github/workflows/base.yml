@@ -31,8 +31,26 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
-      - name: List Docker Directory
+
+      - name: Set up Docker Compose on Windows
+        if: runner.os == 'Windows'
         run: |
-          echo "Listing contents of the docker directory:"
-          ls -la docker/
+          echo "Setting up Docker Compose on Windows..."
+          curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-windows-x86_64.exe" -o /usr/local/bin/docker-compose.exe
+          chmod +x /usr/local/bin/docker-compose.exe
         shell: bash
+
+      - name: Set up Docker Compose on macOS
+        if: runner.os == 'macOS'
+        run: |
+          echo "Setting up Docker Compose on macOS..."
+          brew install docker-compose
+        shell: bash
+
+      - name: Check Docker and Docker Compose
+        run: |
+          echo "Checking Docker and Docker Compose versions..."
+          docker --version
+          docker compose version
+        shell: bash
+
