@@ -19,28 +19,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Docker on macOS
-        if: runner.os == 'macOS'
-        run: |
-          echo "Installing Docker on macOS..."
-          brew install --cask docker
-          open /Applications/Docker.app
-          while ! docker system info > /dev/null 2>&1; do
-            echo "Waiting for Docker to start..."
-            sleep 1
-          done
-        shell: bash
-
-      - name: Install Docker Desktop on Windows
+      - name: Install Docker on Windows
         if: runner.os == 'Windows'
         run: |
           echo "Installing Docker Desktop on Windows..."
           choco install docker-desktop --pre -y
-          start-process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-          while (!docker system info) {
-            echo "Waiting for Docker to start..."
-            Start-Sleep -Seconds 1
-          }
+          echo "Docker installed. Restarting Docker Desktop..."
+          Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe" -NoNewWindow -Wait
+          echo "Waiting for Docker to be ready..."
+          Start-Sleep -Seconds 30
         shell: powershell
 
       - name: Set up Docker Compose on Windows
@@ -49,6 +36,20 @@ jobs:
           echo "Setting up Docker Compose on Windows..."
           curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-windows-x86_64.exe" -o /usr/local/bin/docker-compose.exe
           chmod +x /usr/local/bin/docker-compose.exe
+          refreshenv
+        shell: powershell
+
+      - name: Install Docker on macOS
+        if: runner.os == 'macOS'
+        run: |
+          echo "Installing Docker on macOS..."
+          brew install --cask docker
+          open /Applications/Docker.app
+          echo "Waiting for Docker to be ready..."
+          while ! docker system info > /dev/null 2>&1; do
+            echo "Waiting for Docker to start..."
+            sleep 1
+          done
         shell: bash
 
       - name: Set up Docker Compose on macOS
