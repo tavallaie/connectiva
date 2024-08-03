@@ -2,8 +2,7 @@
 
 import requests
 from typing import Dict, Any
-from connectiva.interfaces import CommunicationMethod
-from connectiva import Message
+from connectiva import Message, CommunicationMethod
 
 class RestProtocol(CommunicationMethod):
     """

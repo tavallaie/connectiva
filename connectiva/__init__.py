@@ -1,3 +1,3 @@
 from .message import Message
-
-__all__=["Message",]
+from .interfaces import CommunicationMethod
+__all__= ["Message","CommunicationMethod",]
