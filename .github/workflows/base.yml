@@ -19,12 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v2
-        with:
-          version: latest  # Specify Docker version if needed
-        id: docker
-
       - name: Check Docker version
         run: docker --version
 
