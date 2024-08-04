@@ -55,7 +55,7 @@ class TestKafkaWithConnectiva(unittest.TestCase):
 
         # Ensure there are no messages to consume
         time.sleep(2)  # Wait for any stray messages to be consumed
-        self.connectiva.consumer.seek_to_end()
+        self.connectiva.seek_to_end()
 
         # Attempt to receive a message when no messages are expected
         received_message = self.connectiva.receive()

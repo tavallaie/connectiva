@@ -92,6 +92,12 @@ class KafkaProtocol(CommunicationMethod):
             self.logger.error(f"Failed to receive message: {e}")
             return Message(action="error", data={}, metadata={"error": str(e)})
 
+    def seek_to_end(self):
+        """Move the consumer to the end of the log for the current topic."""
+        if self.consumer:
+            self.consumer.seek_to_end()
+            self.logger.info("Moved consumer to the end of the log.")
+
     def disconnect(self):
         self.logger.info("Disconnecting from Kafka...")
         try:
