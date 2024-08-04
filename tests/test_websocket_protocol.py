@@ -1,7 +1,12 @@
 import unittest
 import logging
 import threading
+import nest_asyncio
+import asyncio
 from connectiva import Connectiva, Message
+
+# Apply the nest_asyncio patch
+nest_asyncio.apply()
 
 class TestWebSocketProtocolWithConnectiva(unittest.TestCase):
     @classmethod

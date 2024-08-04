@@ -76,9 +76,9 @@ class WebSocketProtocol(CommunicationMethod):
         Starts the server or connects as a client based on the mode.
         """
         if self.mode == "server":
-            self.loop.run_until_complete(self._start_server())
+            asyncio.run(self._start_server())
         elif self.mode == "client":
-            self.loop.run_until_complete(self._connect_async())
+            asyncio.run(self._connect_async())
         else:
             self.logger.error("Invalid mode specified. Use 'client' or 'server'.")
 
@@ -100,7 +100,7 @@ class WebSocketProtocol(CommunicationMethod):
         Unified method to send a message.
         """
         if self.mode == "client":
-            return self.loop.run_until_complete(self._send_async(message))
+            return asyncio.run(self._send_async(message))
         else:
             self.logger.error("Sending directly from server mode is not supported.")
             return {"error": "Invalid operation in server mode"}
@@ -123,7 +123,7 @@ class WebSocketProtocol(CommunicationMethod):
         Unified method to receive a message.
         """
         if self.mode == "client":
-            return self.loop.run_until_complete(self._receive_async())
+            return asyncio.run(self._receive_async())
         else:
             self.logger.error("Receiving directly from server mode is not supported.")
             return Message(action="error", data={}, metadata={"error": "Invalid operation in server mode"})
@@ -141,7 +141,7 @@ class WebSocketProtocol(CommunicationMethod):
         Unified method to disconnect.
         """
         if self.mode == "client":
-            self.loop.run_until_complete(self._disconnect_async())
+            asyncio.run(self._disconnect_async())
         elif self.mode == "server" and self.server:
             self.server.close()
             self.logger.info("WebSocket server stopped.")
