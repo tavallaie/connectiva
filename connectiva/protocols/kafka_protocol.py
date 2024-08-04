@@ -4,6 +4,8 @@ from typing import Dict, Any
 from connectiva import CommunicationMethod, Message
 import json
 import logging
+import re
+
 
 class KafkaProtocol(CommunicationMethod):
     """
@@ -18,19 +20,32 @@ class KafkaProtocol(CommunicationMethod):
         self.consumer = None
 
         # Parse the endpoint to get broker list
-        self.endpoint = kwargs.get("endpoint")
+        self.broker_list = self._parse_endpoint(self.endpoint)
 
         # Set up logger
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    
+    def _parse_endpoint(self, endpoint: str) -> list:
+        """
+        Parse the Kafka endpoint into a list of brokers.
+        :param endpoint: The endpoint URL in the form 'kafka://host1:port1,host2:port2'
+        :return: List of broker addresses ['host1:port1', 'host2:port2']
+        """
+        if not endpoint.startswith("kafka://"):
+            raise ValueError("Invalid Kafka endpoint. Must start with 'kafka://'")
+        
+        # Strip the protocol prefix and split by comma to get individual brokers
+        broker_string = endpoint[len("kafka://"):]
+        brokers = re.split(r',\s*', broker_string)
+        self.logger.debug(f"Parsed brokers: {brokers}")
+        return brokers
 
     def connect(self):
-        self.logger.info(f"Connecting to Kafka brokers at {self.endpoint}...")
+        self.logger.info(f"Connecting to Kafka brokers at {self.broker_list}...")
         try:
             # Initialize Kafka producer
             self.producer = KafkaProducer(
-                bootstrap_servers=self.endpoint,
+                bootstrap_servers=self.broker_list,
                 value_serializer=lambda v: json.dumps(v).encode('utf-8')
             )
             self.logger.info("Kafka producer connected.")
@@ -39,7 +54,7 @@ class KafkaProtocol(CommunicationMethod):
             if self.group_id:
                 self.consumer = KafkaConsumer(
                     self.topic,
-                    bootstrap_servers=self.endpoint,
+                    bootstrap_servers=self.broker_list,
                     group_id=self.group_id,
                     value_deserializer=lambda x: json.loads(x.decode('utf-8'))
                 )
@@ -74,9 +89,12 @@ class KafkaProtocol(CommunicationMethod):
 
     def disconnect(self):
         self.logger.info("Disconnecting from Kafka...")
-        if self.producer:
-            self.producer.close()
-            self.logger.info("Kafka producer disconnected.")
-        if self.consumer:
-            self.consumer.close()
-            self.logger.info("Kafka consumer disconnected.")
+        try:
+            if self.producer:
+                self.producer.close()
+                self.logger.info("Kafka producer disconnected.")
+            if self.consumer:
+                self.consumer.close()
+                self.logger.info("Kafka consumer disconnected.")
+        except Exception as e:
+            self.logger.error(f"Failed to disconnect Kafka: {e}")
