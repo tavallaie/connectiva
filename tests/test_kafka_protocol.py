@@ -53,6 +53,10 @@ class TestKafkaWithConnectiva(unittest.TestCase):
     def test_receive_no_message(self):
         self.logger.debug("Testing receive_no_message")
 
+        # Ensure there are no messages to consume
+        time.sleep(2)  # Wait for any stray messages to be consumed
+        self.connectiva.consumer.seek_to_end()
+
         # Attempt to receive a message when no messages are expected
         received_message = self.connectiva.receive()
         self.logger.debug(f"Receive result: {received_message}")

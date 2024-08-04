@@ -71,9 +71,9 @@ class KafkaProtocol(CommunicationMethod):
     def send(self, message: Message) -> Dict[str, Any]:
         self.logger.info(f"Sending message to Kafka topic '{self.topic}'...")
         try:
-            future = self.producer.send(self.topic, value=message.__dict__)
+            future = self.producer.send(self.topic, value=message.__dict__)  # Send the entire message
             result = future.get(timeout=10)  # Block until a single message is sent
-            self.logger.info("Message sent successfully!")
+            self.logger.info(f"Message sent successfully! Offset: {result.offset}")
             return {"status": "sent", "offset": result.offset}
         except KafkaError as e:
             self.logger.error(f"Failed to send message: {e}")
@@ -84,7 +84,7 @@ class KafkaProtocol(CommunicationMethod):
         try:
             for message in self.consumer:
                 self.logger.info(f"Message received successfully! Message: {message.value}")
-                return Message(action="receive", data=message.value)  # Return the first message received
+                return Message(action="receive", data=message.value)  # Return the entire message
         except StopIteration:
             self.logger.info("No message received.")
             return Message(action="error", data={}, metadata={"error": "No message found"})
