@@ -1,9 +1,12 @@
+# connectiva/protocols/websocket_protocol.py
+
 import asyncio
 import websockets
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 from connectiva import CommunicationMethod, Message
+
 
 class WebSocketProtocol(CommunicationMethod):
     """
@@ -16,21 +19,35 @@ class WebSocketProtocol(CommunicationMethod):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.websocket = None
         self.server = None
+        self.loop = asyncio.get_event_loop()
 
-    async def start_server(self):
+    def _parse_websocket_url(self) -> Tuple[str, int]:
+        """
+        Parse the WebSocket URL to extract the host and port.
+        """
+        try:
+            if self.endpoint.startswith("ws://") or self.endpoint.startswith("wss://"):
+                address = self.endpoint.split("//")[1]
+                host, port = address.split(":")
+                return host, int(port)
+            raise ValueError("Invalid WebSocket URL format")
+        except Exception as e:
+            raise ValueError(f"Error parsing WebSocket URL: {e}")
+
+    async def _start_server(self):
         """
         Starts the WebSocket server.
         """
-        host, port = self._parse_websocket_url(self.endpoint)
+        host, port = self._parse_websocket_url()
         self.logger.info(f"Starting WebSocket server on {self.endpoint}...")
         try:
-            self.server = await websockets.serve(self.handler, host, port)
+            self.server = await websockets.serve(self._server_handler, host, port)
             self.logger.info("WebSocket server started.")
             await self.server.wait_closed()
         except Exception as e:
             self.logger.error(f"Failed to start WebSocket server: {e}")
 
-    async def connect_async(self):
+    async def _connect_async(self):
         """
         Connects to a WebSocket server.
         """
@@ -41,7 +58,7 @@ class WebSocketProtocol(CommunicationMethod):
         except Exception as e:
             self.logger.error(f"Failed to connect to WebSocket: {e}")
 
-    async def handler(self, websocket, path):
+    async def _server_handler(self, websocket, path):
         """
         Handles incoming WebSocket connections.
         """
@@ -59,13 +76,13 @@ class WebSocketProtocol(CommunicationMethod):
         Starts the server or connects as a client based on the mode.
         """
         if self.mode == "server":
-            asyncio.get_event_loop().run_until_complete(self.start_server())
+            self.loop.run_until_complete(self._start_server())
         elif self.mode == "client":
-            asyncio.get_event_loop().run_until_complete(self.connect_async())
+            self.loop.run_until_complete(self._connect_async())
         else:
             self.logger.error("Invalid mode specified. Use 'client' or 'server'.")
 
-    async def send_async(self, message: Message) -> Dict[str, Any]:
+    async def _send_async(self, message: Message) -> Dict[str, Any]:
         """
         Sends a message via WebSocket.
         """
@@ -83,12 +100,12 @@ class WebSocketProtocol(CommunicationMethod):
         Unified method to send a message.
         """
         if self.mode == "client":
-            return asyncio.get_event_loop().run_until_complete(self.send_async(message))
+            return self.loop.run_until_complete(self._send_async(message))
         else:
             self.logger.error("Sending directly from server mode is not supported.")
             return {"error": "Invalid operation in server mode"}
 
-    async def receive_async(self) -> Message:
+    async def _receive_async(self) -> Message:
         """
         Receives a message via WebSocket.
         """
@@ -106,12 +123,12 @@ class WebSocketProtocol(CommunicationMethod):
         Unified method to receive a message.
         """
         if self.mode == "client":
-            return asyncio.get_event_loop().run_until_complete(self.receive_async())
+            return self.loop.run_until_complete(self._receive_async())
         else:
             self.logger.error("Receiving directly from server mode is not supported.")
             return Message(action="error", data={}, metadata={"error": "Invalid operation in server mode"})
 
-    async def disconnect_async(self):
+    async def _disconnect_async(self):
         """
         Disconnects the WebSocket connection.
         """
@@ -124,23 +141,9 @@ class WebSocketProtocol(CommunicationMethod):
         Unified method to disconnect.
         """
         if self.mode == "client":
-            asyncio.get_event_loop().run_until_complete(self.disconnect_async())
+            self.loop.run_until_complete(self._disconnect_async())
         elif self.mode == "server" and self.server:
             self.server.close()
             self.logger.info("WebSocket server stopped.")
         else:
             self.logger.error("No active connection to disconnect.")
-
-    @staticmethod
-    def _parse_websocket_url(endpoint: str):
-        """
-        Parse the WebSocket URL to extract the host and port.
-        """
-        try:
-            if endpoint.startswith("ws://") or endpoint.startswith("wss://"):
-                address = endpoint.split("//")[1]
-                host, port = address.split(":")
-                return host, int(port)
-            raise ValueError("Invalid WebSocket URL format")
-        except Exception as e:
-            raise ValueError(f"Error parsing WebSocket URL: {e}")

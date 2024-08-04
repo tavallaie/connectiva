@@ -1,6 +1,6 @@
 import unittest
-import asyncio
 import logging
+import threading
 from connectiva import Connectiva, Message
 
 class TestWebSocketProtocolWithConnectiva(unittest.TestCase):
@@ -15,8 +15,8 @@ class TestWebSocketProtocolWithConnectiva(unittest.TestCase):
             mode="server",
             log=True
         )
-        cls.loop = asyncio.get_event_loop()
-        cls.loop.run_in_executor(None, cls.server.connect)
+        cls.server_thread = threading.Thread(target=cls.server.connect)
+        cls.server_thread.start()
 
         # Start the WebSocket client using Connectiva
         cls.client = Connectiva(
@@ -24,20 +24,21 @@ class TestWebSocketProtocolWithConnectiva(unittest.TestCase):
             mode="client",
             log=True
         )
-        cls.loop.run_until_complete(cls.client.connect_async())
+        cls.client.connect()
 
     @classmethod
     def tearDownClass(cls):
         # Disconnect both client and server
         cls.client.disconnect()
         cls.server.disconnect()
+        cls.server_thread.join()
 
     def test_send_receive(self):
         # Test sending and receiving messages
         message = Message(action="send", data={"content": "Hello WebSocket!"})
         response = self.client.send(message)
         self.assertEqual(response["status"], "sent", "Message should be sent successfully.")
-        
+
         received_message = self.client.receive()
         self.assertEqual(received_message.data["received"], message.data["content"], "Received message should match sent message.")
 
