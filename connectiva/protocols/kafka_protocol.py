@@ -23,6 +23,7 @@ class KafkaProtocol(CommunicationMethod):
         self.group_id = kwargs.get("group_id")
         self.partitions = kwargs.get("partitions", 1)
         self.replication_factor = kwargs.get("replication_factor", 1)
+        self.consumer_timeout = kwargs.get("consumer_timeout", 5000)  # Timeout for consumer in milliseconds
         self.producer = None
         self.consumer = None
         self.admin_client = None
@@ -93,6 +94,7 @@ class KafkaProtocol(CommunicationMethod):
                     group_id=self.group_id,
                     auto_offset_reset='earliest',  # Start from the earliest message
                     enable_auto_commit=True,  # Automatically commit offsets
+                    consumer_timeout_ms=self.consumer_timeout,  # Set consumer timeout
                     value_deserializer=lambda x: json.loads(x.decode('utf-8'))
                 )
                 self.logger.info("Kafka consumer connected.")
@@ -121,6 +123,8 @@ class KafkaProtocol(CommunicationMethod):
             for message in self.consumer:
                 self.logger.info(f"Message received successfully! Message: {message.value}")
                 return Message(action="receive", data=message.value)  # Return the entire message
+            self.logger.info("No message received within the timeout period.")
+            return Message(action="error", data={}, metadata={"error": "No message found"})
         except StopIteration:
             self.logger.info("No message received.")
             return Message(action="error", data={}, metadata={"error": "No message found"})

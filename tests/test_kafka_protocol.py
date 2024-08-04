@@ -19,6 +19,7 @@ class TestKafkaWithConnectiva(unittest.TestCase):
             group_id='test_group',
             partitions=1,  # Define the number of partitions
             replication_factor=1,  # Define the replication factor
+            consumer_timeout=5000,  # Set consumer timeout to 5 seconds
             log=True,  # Enable logging to stdout
             log_file=cls.log_file,  # Enable logging to file
             log_level="DEBUG"
