@@ -1,3 +1,5 @@
+# tests/test_file_protocol.py
+
 import unittest
 import os
 import shutil
@@ -34,6 +36,9 @@ class TestFileProtocol(unittest.TestCase):
         cls.logger.info("Test teardown complete. Test directory removed.")
 
     def test_send_message(self):
+        """
+        Test sending a message and ensure the file is created correctly.
+        """
         message = Message(action="send", data={"key": "value"})
         result = self.protocol.send(message)
         self.assertIn("status", result)
@@ -44,6 +49,9 @@ class TestFileProtocol(unittest.TestCase):
         self.assertTrue(len(files) > 0, "No files created by send method.")
 
     def test_receive_message(self):
+        """
+        Test receiving a message and ensure the content matches the sent data.
+        """
         # Create a test message file
         message_data = {"key": "value"}
         message = Message(action="send", data=message_data)
@@ -53,6 +61,9 @@ class TestFileProtocol(unittest.TestCase):
         self.assertEqual(received_message.data, message_data, "Received data should match sent message.")
 
     def test_receive_no_message(self):
+        """
+        Test receiving when no message is available and ensure proper error handling.
+        """
         # Ensure directory is empty before the test
         files = os.listdir(self.test_dir)
         for f in files:
@@ -123,6 +134,7 @@ class TestFileProtocol(unittest.TestCase):
 
         # Check if the message was read successfully
         self.assertEqual(result[0], {"content": "Test Lock"}, "Locking mechanism failed; message not read correctly.")
+
 
 if __name__ == '__main__':
     unittest.main()

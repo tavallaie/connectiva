@@ -6,7 +6,6 @@ import logging
 from typing import Dict, Any
 from uuid import uuid4
 from connectiva import CommunicationMethod, Message
-
 class FileProtocol(CommunicationMethod):
     """
     File sharing communication class with atomic file naming and processing.
@@ -108,7 +107,7 @@ class FileProtocol(CommunicationMethod):
                     data = json.load(file)
                     self._unlock_file(file)
                     self.logger.info("Message read successfully!")
-                    return Message(action="receive", data=data)
+                    return Message(**data)
             except Exception as e:
                 self.logger.error(f"Failed to read message: {e}")
                 return Message(action="error", data={}, metadata={"error": str(e)})
