@@ -56,6 +56,8 @@ class KafkaProtocol(CommunicationMethod):
                     self.topic,
                     bootstrap_servers=self.broker_list,
                     group_id=self.group_id,
+                    auto_offset_reset='earliest',  # Start from the earliest message
+                    enable_auto_commit=True,  # Automatically commit offsets
                     value_deserializer=lambda x: json.loads(x.decode('utf-8'))
                 )
                 self.logger.info("Kafka consumer connected.")
@@ -80,9 +82,12 @@ class KafkaProtocol(CommunicationMethod):
     def receive(self) -> Message:
         self.logger.info(f"Receiving message from Kafka topic '{self.topic}'...")
         try:
-            for message in self.consumer:
-                self.logger.info("Message received successfully!")
-                return Message(action="receive", data=message.value)  # Return the first message received
+            message = next(self.consumer)  # Fetch the next message
+            self.logger.info("Message received successfully!")
+            return Message(action="receive", data=message.value)
+        except StopIteration:
+            self.logger.info("No message received.")
+            return Message(action="error", data={}, metadata={"error": "No message found"})
         except KafkaError as e:
             self.logger.error(f"Failed to receive message: {e}")
             return Message(action="error", data={}, metadata={"error": str(e)})
