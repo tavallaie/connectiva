@@ -5,30 +5,28 @@ import os
 import shutil
 import logging
 import threading
-import time
 from connectiva.connectiva import Connectiva
 from connectiva.message import Message
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
 
 
 class TestFileProtocolWithConnectiva(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_dir = "test_messages"
-        cls.connectiva = Connectiva(
-            log=True,
-            directory=cls.test_dir,
-            protocol="File",
-            prefix="msg_",
-            processed_prefix="processed_"
-        )
+        cls.endpoint = f"file://{os.path.abspath(cls.test_dir)}"  # Use file:// scheme
 
         # Ensure the directory is clean before starting
         if os.path.exists(cls.test_dir):
             shutil.rmtree(cls.test_dir)
         os.makedirs(cls.test_dir)
+
+        cls.connectiva = Connectiva(
+            log=True,
+            endpoint=cls.endpoint,
+            protocol="File",  # Specify protocol directly
+            prefix="msg_",
+            processed_prefix="processed_"
+        )
 
         # Log the setup process
         cls.logger = logging.getLogger('TestFileProtocolWithConnectiva')
@@ -51,7 +49,7 @@ class TestFileProtocolWithConnectiva(unittest.TestCase):
         self.assertEqual(result["status"], "file_written")
 
         # Check if a file was created
-        files = [f for f in os.listdir(self.test_dir) if f.startswith(self.connectiva.config.get('prefix'))]
+        files = [f for f in os.listdir(self.test_dir) if f.startswith("msg_")]
         self.assertTrue(len(files) > 0, "No files created by send method.")
 
     def test_receive_message(self):
@@ -110,37 +108,36 @@ class TestFileProtocolWithConnectiva(unittest.TestCase):
 
     def test_locking_mechanism(self):
         """
-        Test the file locking mechanism by attempting concurrent writes and reads,
-        ensuring that the lock is acquired and released properly.
+        Test the file locking mechanism by attempting concurrent writes and reads
         """
-        lock_acquired = threading.Event()
-
-        def write_with_lock(connectiva, message_data):
-            nonlocal lock_acquired
+        def write_message(connectiva, message_data):
             message = Message(action="send", data=message_data)
             connectiva.send(message)
-            lock_acquired.set()  # Indicate that the lock was acquired
 
-        def read_with_lock(connectiva, result):
-            nonlocal lock_acquired
-            # Wait until the lock is acquired by the write operation
-            lock_acquired.wait()
-            time.sleep(0.5)  # Wait for a bit to ensure the write lock is held
-            result.append(connectiva.receive().data)
+        # Write a message to the file
+        message_data_1 = {"content": "Test Lock"}
+        message_data_2 = {"content": "Hello!"}
 
-        write_thread = threading.Thread(target=write_with_lock, args=(self.connectiva, {"content": "Test Lock"}))
-        result = []
-        read_thread = threading.Thread(target=read_with_lock, args=(self.connectiva, result))
+        thread_1 = threading.Thread(target=write_message, args=(self.connectiva, message_data_1))
+        thread_2 = threading.Thread(target=write_message, args=(self.connectiva, message_data_2))
 
-        write_thread.start()
-        read_thread.start()
+        thread_1.start()
+        thread_2.start()
 
-        write_thread.join()
-        read_thread.join()
+        thread_1.join()
+        thread_2.join()
 
-        # Check if the message was read successfully
-        self.assertEqual(result[0], {"content": "Test Lock"}, "Locking mechanism failed; message not read correctly.")
+        # Ensure both messages are read correctly
+        received_messages = []
+        while True:
+            received_message = self.connectiva.receive()
+            if received_message.action == "error":
+                break
+            received_messages.append(received_message.data)
+
+        expected_results = [message_data_1, message_data_2]
+        self.assertEqual(sorted(received_messages), sorted(expected_results), "Locking mechanism failed; message not read correctly.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
