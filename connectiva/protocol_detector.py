@@ -19,6 +19,7 @@ class ProtocolDetector:
         "ws://": "WebSocket",
         "wss://": "WebSocket",
         "graphql://": "GraphQL",
+        "file://": "File",  
     }
 
     @staticmethod
@@ -45,3 +46,4 @@ class ProtocolDetector:
 
         # Default fallback
         return "REST"
+
