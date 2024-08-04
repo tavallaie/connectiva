@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, Any, List, Optional
-from connectiva import CommunicationFactory, Message , setup_logging
+from connectiva import CommunicationFactory, Message, setup_logging
 
 
 class Connectiva:
@@ -62,3 +62,12 @@ class Connectiva:
     def disconnect(self):
         self.logger.info("Disconnecting from communication endpoint...")
         self.strategy.disconnect()
+
+    def seek_to_end(self):
+        """
+        Seek the consumer to the end of the topic.
+        This method will check if the strategy supports seeking.
+        """
+        if hasattr(self.strategy, 'seek_to_end'):
+            self.strategy.seek_to_end()
+            self.logger.info("Consumer moved to the end of the log.")

@@ -1,0 +1,72 @@
+name: Kafka Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'connectiva/protocols/kafka_protocol.py'
+      - 'tests/test_kafka_protocol.py'
+      - 'pyproject.toml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'connectiva/protocols/kafka_protocol.py'
+      - 'tests/test_kafka_protocol.py'
+      - 'pyproject.toml'
+
+jobs:
+  test-kafka:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+
+      - name: Add Poetry to Path
+        run: echo "export PATH=\"$HOME/.local/bin:\$PATH\"" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Start Kafka and Zookeeper
+        run: |
+          echo "Starting Kafka and Zookeeper services on Python ${{ matrix.python-version }}..."
+          docker compose -f docker/docker-compose.kafka.yml up -d
+
+      - name: Wait for Kafka to be healthy
+        run: |
+          echo "Waiting for Kafka service to be healthy..."
+          for i in {1..10}; do
+            if [ "$(docker inspect --format='{{json .State.Health.Status}}' $(docker ps -q -f name=kafka))" == "\"healthy\"" ]; then
+              echo "Kafka is healthy!"
+              break
+            else
+              echo "Kafka is not healthy yet. Waiting..."
+              sleep 10
+            fi
+          done
+
+      - name: Run Kafka Tests
+        run: |
+          echo "Running Kafka tests on Python ${{ matrix.python-version }}..."
+          poetry run python -m unittest discover -s tests -p 'test_kafka_protocol.py'
+
+      - name: Stop Kafka and Zookeeper
+        run: |
+          echo "Stopping Kafka and Zookeeper services..."
+          docker compose -f docker/docker-compose.kafka.yml down

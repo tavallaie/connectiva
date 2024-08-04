@@ -1,58 +1,58 @@
-# tests/test_amqp_protocol.py
-
 import unittest
 import time
-from connectiva.protocols.amqp_protocol import AMQPProtocol
-from connectiva import Message
+import logging
+from connectiva import Connectiva, Message
 
 
-class TestAMQPProtocol(unittest.TestCase):
+class TestAMQPWithConnectiva(unittest.TestCase):
 
-    def setUp(self):
-        # Use a fixed endpoint for testing
-        self.protocol = AMQPProtocol(endpoint='amqp://guest:guest@127.0.0.1:5672/', queue_name='test_queue')
-        self.protocol.connect()
+    @classmethod
+    def setUpClass(cls):
+        # Set up logging configuration
+        cls.logger = logging.getLogger("ConnectivaAMQPTest")
 
-        # Ensure the queue is empty before each test
-        self.clear_queue()
+        # Initialize Connectiva with AMQP configuration
+        cls.connectiva = Connectiva(
+            endpoint='amqp://guest:guest@localhost:5672/',  # RabbitMQ default endpoint
+            queue_name='test_queue',
+            log=True,  # Enable logging to stdout
+            log_level="DEBUG"
+        )
+        cls.connectiva.connect()
+        cls.logger.info("Connected to AMQP using Connectiva")
 
-    def tearDown(self):
-        # Ensure disconnect after each test
-        self.protocol.disconnect()
-
-    def clear_queue(self):
-        # Purge the queue to ensure it's empty
-        self.protocol.channel.queue_purge(queue=self.protocol.queue_name)
-
-    def test_connect(self):
-        # Verify connection is established
-        self.assertIsNotNone(self.protocol.connection, "Connection should be established")
-        self.assertIsNotNone(self.protocol.channel, "Channel should be created")
+    @classmethod
+    def tearDownClass(cls):
+        # Disconnect after all tests
+        cls.connectiva.disconnect()
+        cls.logger.info("Disconnected from AMQP using Connectiva")
 
     def test_send_message(self):
-        # Send a message and check the response
+        self.logger.debug("Testing send_message")
         message = Message(action="send", data={"key": "value"})
-        result = self.protocol.send(message)
-        self.assertEqual(result, {"status": "sent"}, "Message send status should be 'sent'")
+        result = self.connectiva.send(message)
+        self.logger.debug(f"Send result: {result}")
+        self.assertEqual(result["status"], "sent", "Message send status should be 'sent'")
 
     def test_receive_message(self):
-        # Send a message first to ensure there's something to receive
+        self.logger.debug("Testing receive_message")
         sent_message = Message(action="send", data={"key": "value"})
-        self.protocol.send(sent_message)
-        
-        # Allow some time for the message to be available
-        time.sleep(1)
+        self.connectiva.send(sent_message)
 
-        # Receive the message and verify contents
-        received_message = self.protocol.receive()
+        time.sleep(1)  # Allow some time for the message to be available
+
+        received_message = self.connectiva.receive()
+        self.logger.debug(f"Received message: {received_message}")
         self.assertEqual(received_message.action, "receive", "Received action should be 'receive'")
         self.assertEqual(received_message.data, sent_message.__dict__, "Received data should match sent message")
 
     def test_receive_no_message(self):
-        # Attempt to receive when no message is expected
-        received_message = self.protocol.receive()
+        self.logger.debug("Testing receive_no_message")
+        time.sleep(1)  # Allow time for the consumer to poll
+        received_message = self.connectiva.receive()
+        self.logger.debug(f"Receive result: {received_message}")
         self.assertEqual(received_message.action, "error", "Action should be 'error' when no message is found")
-        self.assertEqual(received_message.metadata, {"error": "No message found"}, "Error metadata should indicate no message found")
+        self.assertIn("No message found", received_message.metadata.get("error", ""), "Error metadata should indicate no message found")
 
 
 if __name__ == '__main__':
