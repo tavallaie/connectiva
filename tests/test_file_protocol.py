@@ -99,8 +99,8 @@ class TestFileProtocol(unittest.TestCase):
             thread.join()
 
         # Verify that each message was processed exactly once
-        for result in results:
-            self.assertEqual(result, {"content": "Hello!"}, "Each receiver should get the correct message content.")
+        expected_results = [{"content": "Hello!"}] * 5
+        self.assertListEqual(sorted(results), sorted(expected_results), "Each receiver should get the correct message content.")
 
     def test_locking_mechanism(self):
         """
