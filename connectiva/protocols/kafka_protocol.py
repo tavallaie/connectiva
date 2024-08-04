@@ -82,9 +82,9 @@ class KafkaProtocol(CommunicationMethod):
     def receive(self) -> Message:
         self.logger.info(f"Receiving message from Kafka topic '{self.topic}'...")
         try:
-            message = next(self.consumer)  # Fetch the next message
-            self.logger.info("Message received successfully!")
-            return Message(action="receive", data=message.value)
+            for message in self.consumer:
+                self.logger.info(f"Message received successfully! Message: {message.value}")
+                return Message(action="receive", data=message.value)  # Return the first message received
         except StopIteration:
             self.logger.info("No message received.")
             return Message(action="error", data={}, metadata={"error": "No message found"})
