@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
 
     steps:
       - name: Checkout code
@@ -40,15 +40,19 @@ jobs:
       - name: Add Poetry to Path
         run: echo "export PATH=\"$HOME/.local/bin:\$PATH\"" >> $GITHUB_ENV
 
+      - name: Install dependencies
+        run: poetry install
+
       - name: Start RabbitMQ Service
         run: |
           echo "Starting RabbitMQ service on Python ${{ matrix.python-version }}..."
           docker compose -f docker/docker-compose.rabbitmq.yml up -d
-
-      - name: Install dependencies
-        run: poetry install
-
-
+          
+      - name: Wait for RabbitMQ to be healthy
+        run: |
+          echo "Waiting for RabbitMQ service to be healthy..."
+          docker compose -f docker/docker-compose.rabbitmq.yml ps -q rabbitmq | xargs -I {} docker inspect --format='{{json .State.Health}}' {} | jq 'until(.Status=="healthy") | .'
+          
       - name: Run RabbitMQ Tests
         run: |
           echo "Running RabbitMQ tests on Python ${{ matrix.python-version }}..."

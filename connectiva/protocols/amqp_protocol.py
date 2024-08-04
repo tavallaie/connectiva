@@ -1,5 +1,3 @@
-# connectiva/protocols/amqp_protocol.py
-
 import pika
 import json
 import logging
@@ -16,6 +14,8 @@ class AMQPProtocol(CommunicationMethod):
         self.queue_name = kwargs.get("queue_name")
         self.connection = None
         self.channel = None
+
+        # Set up logger
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def connect(self):
@@ -42,12 +42,17 @@ class AMQPProtocol(CommunicationMethod):
     def receive(self) -> Message:
         self.logger.info("Receiving message from queue '%s'...", self.queue_name)
         try:
+            # Use basic_get to receive a message
             method_frame, header_frame, body = self.channel.basic_get(self.queue_name)
+            
+            # Check if a message was received
             if method_frame:
                 self.channel.basic_ack(method_frame.delivery_tag)
                 self.logger.info("Message received successfully!")
-                return Message(action="receive", data=json.loads(body))
+                message_data = json.loads(body)
+                return Message(action="receive", data=message_data)
             else:
+                # Return an error message if no message was found
                 self.logger.warning("No message received.")
                 return Message(action="error", data={}, metadata={"error": "No message found"})
         except Exception as e:
