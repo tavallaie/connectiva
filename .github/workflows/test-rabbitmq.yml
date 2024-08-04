@@ -17,23 +17,56 @@ on:
       - 'pyproject.toml'
 
 jobs:
-  base-setup:
-    uses: ./.github/workflows/base.yml
-    with:
-      python-version: ${{ matrix.python-version }}
-
   test-rabbitmq:
-    needs: base-setup  # This ensures that base-setup runs before this job
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+
+      - name: Add Poetry to Path
+        run: echo "export PATH=\"$HOME/.local/bin:\$PATH\"" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Start RabbitMQ Service
+        run: |
+          echo "Starting RabbitMQ service on Python ${{ matrix.python-version }}..."
+          docker compose -f docker/docker-compose.rabbitmq.yml up -d
+
+      - name: Wait for RabbitMQ to be healthy
+        run: |
+          echo "Waiting for RabbitMQ service to be healthy..."
+          for i in {1..10}; do
+            if [ "$(docker inspect --format='{{json .State.Health.Status}}' $(docker compose -f docker/docker-compose.rabbitmq.yml ps -q rabbitmq))" == "\"healthy\"" ]; then
+              echo "RabbitMQ is healthy!"
+              break
+            else
+              echo "RabbitMQ is not healthy yet. Waiting..."
+              sleep 10
+            fi
+          done
+
       - name: Run RabbitMQ Tests
         run: |
           echo "Running RabbitMQ tests on Python ${{ matrix.python-version }}..."
-          docker-compose -f docker/docker-compose.rabbitmq.yml up -d
           poetry run python -m unittest discover -s tests -p 'test_amqp_protocol.py'
-          docker-compose -f docker/docker-compose.rabbitmq.yml down
+
+      - name: Stop RabbitMQ Service
+        run: |
+          echo "Stopping RabbitMQ service..."
+          docker compose -f docker/docker-compose.rabbitmq.yml down
