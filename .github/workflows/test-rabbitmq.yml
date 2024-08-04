@@ -5,16 +5,16 @@ on:
     branches:
       - main
     paths:
-        - 'connectiva/protocols/amqp_protocol.py'
-        - 'tests/test_amqp_protocol.py'
-        - 'pyproject.toml'
+      - 'connectiva/protocols/amqp_protocol.py'
+      - 'tests/test_amqp_protocol.py'
+      - 'pyproject.toml'
   pull_request:
     branches:
       - main
     paths:
-        - 'connectiva/protocols/amqp_protocol.py'
-        - 'tests/test_amqp_protocol.py'
-        - 'pyproject.toml'
+      - 'connectiva/protocols/amqp_protocol.py'
+      - 'tests/test_amqp_protocol.py'
+      - 'pyproject.toml'
 
 jobs:
   test-rabbitmq:
@@ -47,12 +47,20 @@ jobs:
         run: |
           echo "Starting RabbitMQ service on Python ${{ matrix.python-version }}..."
           docker compose -f docker/docker-compose.rabbitmq.yml up -d
-          
+
       - name: Wait for RabbitMQ to be healthy
         run: |
           echo "Waiting for RabbitMQ service to be healthy..."
-          docker compose -f docker/docker-compose.rabbitmq.yml ps -q rabbitmq | xargs -I {} docker inspect --format='{{json .State.Health}}' {} | jq 'until(.Status=="healthy") | .'
-          
+          for i in {1..10}; do
+            if [ "$(docker inspect --format='{{json .State.Health.Status}}' $(docker compose -f docker/docker-compose.rabbitmq.yml ps -q rabbitmq))" == "\"healthy\"" ]; then
+              echo "RabbitMQ is healthy!"
+              break
+            else
+              echo "RabbitMQ is not healthy yet. Waiting..."
+              sleep 10
+            fi
+          done
+
       - name: Run RabbitMQ Tests
         run: |
           echo "Running RabbitMQ tests on Python ${{ matrix.python-version }}..."
