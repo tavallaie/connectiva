@@ -1,11 +1,13 @@
+# connectiva/protocols/file_protocol.py
+
 import os
 import json
-import time
 import fcntl
 import logging
-from typing import Dict, Any
 from uuid import uuid4
+from typing import Dict, Any
 from connectiva import CommunicationMethod, Message
+
 class FileProtocol(CommunicationMethod):
     """
     File sharing communication class with atomic file naming and processing.
@@ -14,7 +16,7 @@ class FileProtocol(CommunicationMethod):
     def __init__(self, **kwargs):
         self.directory = kwargs.get("directory", ".")
         self.prefix = kwargs.get("prefix", "msg_")
-        self.processed_prefix = kwargs.get("processed_prefix", "processed_")
+        self.processed_prefix = kwargs.get("processed_", "processed_")
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Ensure the directory exists
@@ -99,11 +101,18 @@ class FileProtocol(CommunicationMethod):
                 # Lock the file and rename it to indicate processing
                 with open(file_path, 'r+') as file:
                     self._lock_file(file)
+
+                    # Check if the file has already been processed
+                    if file_path.startswith(self.processed_prefix):
+                        self._unlock_file(file)
+                        continue
+
                     new_file_path = os.path.join(self.directory, self.processed_prefix + filename)
                     os.rename(file_path, new_file_path)
                     self.logger.info(f"Renamed file to {new_file_path} for processing.")
 
                     # Read the message
+                    file.seek(0)  # Reset file pointer to the beginning
                     data = json.load(file)
                     self._unlock_file(file)
                     self.logger.info("Message read successfully!")
