@@ -46,7 +46,7 @@ jobs:
       - name: Start Kafka and Zookeeper
         run: |
           echo "Starting Kafka and Zookeeper services on Python ${{ matrix.python-version }}..."
-          docker compose -f docker-compose.kafka.yml up -d
+          docker compose -f docker/docker-compose.kafka.yml up -d
 
       - name: Wait for Kafka to be healthy
         run: |
@@ -69,4 +69,4 @@ jobs:
       - name: Stop Kafka and Zookeeper
         run: |
           echo "Stopping Kafka and Zookeeper services..."
-          docker compose -f docker-compose.kafka.yml down
+          docker compose -f docker/docker-compose.kafka.yml down
