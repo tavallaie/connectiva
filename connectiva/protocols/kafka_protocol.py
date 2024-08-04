@@ -6,13 +6,16 @@ import json
 import logging
 import re
 
-
 class KafkaProtocol(CommunicationMethod):
     """
     Kafka communication class for producing and consuming messages from Kafka topics.
     """
 
     def __init__(self, **kwargs):
+        # Set up logger first
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        # Extract configuration from kwargs
         self.endpoint = kwargs.get("endpoint")
         self.topic = kwargs.get("topic")
         self.group_id = kwargs.get("group_id")
@@ -21,9 +24,6 @@ class KafkaProtocol(CommunicationMethod):
 
         # Parse the endpoint to get broker list
         self.broker_list = self._parse_endpoint(self.endpoint)
-
-        # Set up logger
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def _parse_endpoint(self, endpoint: str) -> list:
         """
