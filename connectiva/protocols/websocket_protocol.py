@@ -7,7 +7,6 @@ import logging
 from typing import Dict, Any, Tuple
 from connectiva import CommunicationMethod, Message
 
-
 class WebSocketProtocol(CommunicationMethod):
     """
     WebSocket protocol that can operate as both a server and client.
@@ -66,7 +65,14 @@ class WebSocketProtocol(CommunicationMethod):
         try:
             async for message in websocket:
                 self.logger.info(f"Received message: {message}")
-                response = json.dumps({"action": "response", "data": {"received": message}})
+                
+                # Echo the message back with the expected structure
+                received_data = json.loads(message)
+                response = json.dumps({
+                    "action": "response",
+                    "data": {"received": received_data["data"]["content"]}
+                })
+                
                 await websocket.send(response)
         except websockets.exceptions.ConnectionClosed as e:
             self.logger.info(f"Client disconnected: {e}")

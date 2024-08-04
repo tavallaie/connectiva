@@ -1,3 +1,5 @@
+# tests/test_websocket_protocol.py
+
 import unittest
 import logging
 import threading
@@ -45,7 +47,8 @@ class TestWebSocketProtocolWithConnectiva(unittest.TestCase):
         self.assertEqual(response["status"], "sent", "Message should be sent successfully.")
 
         received_message = self.client.receive()
-        self.assertEqual(received_message.data["received"], message.data["content"], "Received message should match sent message.")
+        # Check for the 'received' key in the echoed message
+        self.assertEqual(received_message.data["data"]["received"], message.data["content"], "Received message should match sent message.")
 
     def test_server_client_communication(self):
         # Test communication between server and client
@@ -54,7 +57,8 @@ class TestWebSocketProtocolWithConnectiva(unittest.TestCase):
         self.assertEqual(response["status"], "sent", "Message should be sent successfully.")
 
         received_message = self.client.receive()
-        self.assertEqual(received_message.data["received"], message.data["content"], "Server should echo the message back to the client.")
+        # Check for the 'received' key in the echoed message
+        self.assertEqual(received_message.data["data"]["received"], message.data["content"], "Server should echo the message back to the client.")
 
 
 if __name__ == "__main__":
