@@ -1,5 +1,3 @@
-# connectiva/protocols/file_protocol.py
-
 import os
 import json
 import fcntl
@@ -7,6 +5,7 @@ import logging
 from uuid import uuid4
 from typing import Dict, Any
 from connectiva import CommunicationMethod, Message
+
 
 class FileProtocol(CommunicationMethod):
     """
@@ -16,7 +15,7 @@ class FileProtocol(CommunicationMethod):
     def __init__(self, **kwargs):
         self.directory = kwargs.get("directory", ".")
         self.prefix = kwargs.get("prefix", "msg_")
-        self.processed_prefix = kwargs.get("processed_", "processed_")
+        self.processed_prefix = kwargs.get("processed_prefix", "processed_")  # Fixed parameter name
         self.logger = logging.getLogger(self.__class__.__name__)
 
         # Ensure the directory exists
@@ -97,17 +96,18 @@ class FileProtocol(CommunicationMethod):
 
         for filename in files:
             file_path = os.path.join(self.directory, filename)
+            new_file_path = os.path.join(self.directory, self.processed_prefix + filename)
+
             try:
                 # Lock the file and rename it to indicate processing
                 with open(file_path, 'r+') as file:
                     self._lock_file(file)
 
                     # Check if the file has already been processed
-                    if file_path.startswith(self.processed_prefix):
+                    if filename.startswith(self.processed_prefix):
                         self._unlock_file(file)
                         continue
 
-                    new_file_path = os.path.join(self.directory, self.processed_prefix + filename)
                     os.rename(file_path, new_file_path)
                     self.logger.info(f"Renamed file to {new_file_path} for processing.")
 
@@ -117,6 +117,7 @@ class FileProtocol(CommunicationMethod):
                     self._unlock_file(file)
                     self.logger.info("Message read successfully!")
                     return Message(**data)
+
             except Exception as e:
                 self.logger.error(f"Failed to read message: {e}")
                 return Message(action="error", data={}, metadata={"error": str(e)})
@@ -125,3 +126,4 @@ class FileProtocol(CommunicationMethod):
 
     def disconnect(self):
         self.logger.info("Closing directory access...")
+

@@ -85,7 +85,8 @@ class TestFileProtocolWithConnectiva(unittest.TestCase):
         """
         def receiver(connectiva, results, index):
             message = connectiva.receive()
-            results[index] = message.data
+            if message.action != "error":  # Only store successful results
+                results[index] = message.data
 
         # Create multiple message files
         for _ in range(5):
@@ -148,3 +149,4 @@ class TestFileProtocolWithConnectiva(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
