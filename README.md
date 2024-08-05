@@ -39,13 +39,13 @@
 
  Connectiva supports the following communication protocols:
 
- - **REST APIs**
- - **gRPC**
- - **Kafka**
- - **RabbitMQ (and other message brokers)**
- - **WebSockets**
- - **GraphQL**
- - **File-based communication**
+ - [ ] **REST APIs**
+ - [ ] **gRPC**
+ - [X] **Kafka**
+ - [X] **RabbitMQ (and other message brokers)**
+ - [X] **WebSockets**
+ - [ ] **GraphQL**
+ - [X] **File-based communication**
 
  ## Usage
 
